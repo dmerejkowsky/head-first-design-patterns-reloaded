@@ -10,7 +10,7 @@ struct WeatherData {
 
 #[derive(Default)]
 struct WeatherStation<'o> {
-    displays: Vec<Box<&'o mut dyn Observer>>,
+    displays: Vec<&'o mut dyn Observer>,
 }
 
 impl<'o> WeatherStation<'o> {
@@ -18,7 +18,7 @@ impl<'o> WeatherStation<'o> {
         Default::default()
     }
 
-    fn subscribe(&mut self, display: Box<&'o mut dyn Observer>) {
+    fn subscribe(&mut self, display: &'o mut dyn Observer) {
         self.displays.push(display);
     }
 
@@ -89,7 +89,7 @@ mod tests {
     fn test_real_time_display() {
         let mut weather_station = WeatherStation::new();
         let mut realtime_display = RealTimeDisplay;
-        weather_station.subscribe(Box::new(&mut realtime_display));
+        weather_station.subscribe(&mut realtime_display);
         weather_station.run();
     }
 
@@ -98,8 +98,8 @@ mod tests {
         let mut weather_station = WeatherStation::new();
         let mut realtime_display = RealTimeDisplay;
         let mut statistics_display = StatisticsDisplay::new();
-        weather_station.subscribe(Box::new(&mut realtime_display));
-        weather_station.subscribe(Box::new(&mut statistics_display));
+        weather_station.subscribe(&mut realtime_display);
+        weather_station.subscribe(&mut statistics_display);
         weather_station.run();
         let mean_temperature = statistics_display.mean_temperature();
         assert_eq!(mean_temperature, 25.5);
@@ -111,11 +111,11 @@ mod tests {
         let mut w2 = WeatherStation::new();
         let mut realtime_display = RealTimeDisplay;
         let mut statistics_display = StatisticsDisplay::new();
-        w1.subscribe(Box::new(&mut realtime_display));
-        w1.subscribe(Box::new(&mut statistics_display));
-        /* Does not compile :)
-        w2.subscribe(Box::new(&mut realtime_display));
-        w2.subscribe(Box::new(&mut statistics_display));
+        w1.subscribe(&mut realtime_display);
+        w1.subscribe(&mut statistics_display);
+        /* does not compile :)
+        w2.subscribe(&mut realtime_display);
+        w2.subscribe(&mut statistics_display);
         */
         w1.run();
         w2.run();

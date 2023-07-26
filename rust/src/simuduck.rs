@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(clippy::new_ret_no_self)]
 
 trait Flyable {
     fn fly(&self) -> &str;

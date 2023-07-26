@@ -28,16 +28,16 @@ impl<'o> WeatherStation<'o> {
             temperature: 25,
             pressure: 1000,
         };
-        self.update(weather_data);
+        self.notify(weather_data);
         let weather_data = WeatherData {
             humidity: 90,
             temperature: 26,
             pressure: 800,
         };
-        self.update(weather_data);
+        self.notify(weather_data);
     }
 
-    fn update(&mut self, weather_data: WeatherData) {
+    fn notify(&mut self, weather_data: WeatherData) {
         for display in &mut self.displays {
             display.on_change(&weather_data);
         }
@@ -103,5 +103,21 @@ mod tests {
         weather_station.run();
         let mean_temperature = statistics_display.mean_temperature();
         assert_eq!(mean_temperature, 25.5);
+    }
+
+    #[test]
+    fn test_cannot_have_two_weather_stations_with_the_same_observers() {
+        let mut w1 = WeatherStation::new();
+        let mut w2 = WeatherStation::new();
+        let mut realtime_display = RealTimeDisplay;
+        let mut statistics_display = StatisticsDisplay::new();
+        w1.subscribe(Box::new(&mut realtime_display));
+        w1.subscribe(Box::new(&mut statistics_display));
+        /* Does not compile :)
+        w2.subscribe(Box::new(&mut realtime_display));
+        w2.subscribe(Box::new(&mut statistics_display));
+        */
+        w1.run();
+        w2.run();
     }
 }

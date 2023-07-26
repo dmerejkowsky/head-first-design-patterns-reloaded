@@ -1,7 +1,5 @@
 trait Observer {
-    fn on_humidity_changed(&mut self, humidity: u32);
-    fn on_temperature_changed(&mut self, temperature: u32);
-    fn on_pressure_changed(&mut self, pressure: u32);
+    fn on_change(&mut self, weather: &WeatherData);
 }
 
 struct WeatherData {
@@ -41,9 +39,7 @@ impl<'o> WeatherStation<'o> {
 
     fn update(&mut self, weather_data: WeatherData) {
         for display in &mut self.displays {
-            display.on_humidity_changed(weather_data.humidity);
-            display.on_temperature_changed(weather_data.temperature);
-            display.on_pressure_changed(weather_data.pressure);
+            display.on_change(&weather_data);
         }
     }
 }
@@ -56,16 +52,13 @@ mod tests {
     struct RealTimeDisplay;
 
     impl Observer for RealTimeDisplay {
-        fn on_humidity_changed(&mut self, humidity: u32) {
-            println!("{humidity}");
-        }
-
-        fn on_temperature_changed(&mut self, temperature: u32) {
-            println!("{temperature}");
-        }
-
-        fn on_pressure_changed(&mut self, pressure: u32) {
-            println!("{pressure}");
+        fn on_change(&mut self, weather: &WeatherData) {
+            let WeatherData {
+                humidity,
+                temperature,
+                pressure,
+            } = weather;
+            println!("{humidity}% {temperature}deg {pressure}Pa")
         }
     }
 
@@ -86,11 +79,8 @@ mod tests {
     }
 
     impl Observer for StatisticsDisplay {
-        fn on_humidity_changed(&mut self, _humidity: u32) {}
-        fn on_pressure_changed(&mut self, _pressure: u32) {}
-
-        fn on_temperature_changed(&mut self, temperature: u32) {
-            self.temprature_sum += temperature;
+        fn on_change(&mut self, weather: &WeatherData) {
+            self.temprature_sum += weather.temperature;
             self.temperature_count += 1;
         }
     }

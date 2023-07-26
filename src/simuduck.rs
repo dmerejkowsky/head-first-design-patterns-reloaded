@@ -7,14 +7,14 @@ trait Quackable {
     fn quack(&self) -> &str;
 }
 
-struct Duck {
+struct Duck<F: Flyable, Q: Quackable> {
     name: &'static str,
-    flyable: Box<dyn Flyable>,
-    quackable: Box<dyn Quackable>,
+    flyable: F,
+    quackable: Q,
 }
 
-impl Duck {
-    fn new(name: &'static str, fly: Box<dyn Flyable>, quack: Box<dyn Quackable>) -> Self {
+impl<F: Flyable, Q: Quackable> Duck<F, Q> {
+    fn new(name: &'static str, fly: F, quack: Q) -> Self {
         Self {
             name,
             flyable: fly,
@@ -84,20 +84,31 @@ impl Flyable for RocketFly {
     }
 }
 
-fn mallard_duck() -> Duck {
-    Duck::new("mallard", Box::new(FlyingWithWings), Box::new(Quack))
+struct MallardDuck;
+impl MallardDuck {
+    fn new() -> Duck<FlyingWithWings, Quack> {
+        Duck::new("mallard", FlyingWithWings, Quack)
+    }
 }
 
-fn red_head_duck() -> Duck {
-    Duck::new("red head", Box::new(FlyingWithWings), Box::new(Quack))
+struct RedHeadDuck;
+impl RedHeadDuck {
+    fn new() -> Duck<FlyingWithWings, Quack> {
+        Duck::new("red head", FlyingWithWings, Quack)
+    }
+}
+struct RubberDuck;
+impl RubberDuck {
+    fn new() -> Duck<FlyNoWay, Squeak> {
+        Duck::new("rubber", FlyNoWay, Squeak)
+    }
 }
 
-fn rubber_duck() -> Duck {
-    Duck::new("rubber duck", Box::new(FlyNoWay), Box::new(Squeak))
-}
-
-fn wooden_duck() -> Duck {
-    Duck::new("wooden duck", Box::new(FlyNoWay), Box::new(Silence))
+struct WoodenDuck;
+impl WoodenDuck {
+    fn new() -> Duck<FlyNoWay, Silence> {
+        Duck::new("wooden", FlyNoWay, Silence)
+    }
 }
 
 #[cfg(test)]
@@ -107,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_mallard_duck() {
-        let duck = mallard_duck();
+        let duck = MallardDuck::new();
         assert_eq!(duck.quack(), "quack");
         assert_eq!(duck.fly(), "I'm flying with wings");
         assert_eq!(duck.name(), "mallard");
@@ -115,7 +126,7 @@ mod tests {
 
     #[test]
     fn test_red_head_duck() {
-        let duck = red_head_duck();
+        let duck = RedHeadDuck::new();
         assert_eq!(duck.quack(), "quack");
         assert_eq!(duck.fly(), "I'm flying with wings");
         assert_eq!(duck.name(), "red head");
@@ -123,16 +134,15 @@ mod tests {
 
     #[test]
     fn test_rubber_duck() {
-        let duck = rubber_duck();
+        let duck = RubberDuck::new();
         assert_eq!(duck.quack(), "squeak");
         assert_eq!(duck.fly(), "No way");
     }
 
     #[test]
     fn test_wooden_duck() {
-        let mut duck = wooden_duck();
+        let duck = WoodenDuck::new();
         assert_eq!(duck.fly(), "No way");
-        duck.flyable = Box::new(RocketFly);
-        assert_eq!(duck.fly(), "I'm on a rocket");
+        assert_eq!(duck.quack(), "<silence>");
     }
 }

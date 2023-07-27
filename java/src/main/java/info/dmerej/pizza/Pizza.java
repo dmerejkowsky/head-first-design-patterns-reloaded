@@ -1,14 +1,59 @@
 package info.dmerej.pizza;
 
 public abstract class Pizza {
-    private String crust;
+    protected Dough dough;
+    protected Sauce sauce;
+    protected Veggies[] veggies;
+    protected Cheese cheese;
+    protected Pepperoni pepperoni;
+    protected Clams clams;
 
-    public String getCrust() {
-        return crust;
+    public Dough getDough() {
+        return dough;
     }
 
-    public void setCrust(String crust) {
-        this.crust = crust;
+    public void setDough(Dough dough) {
+        this.dough = dough;
+    }
+
+    public Sauce getSauce() {
+        return sauce;
+    }
+
+    public void setSauce(Sauce sauce) {
+        this.sauce = sauce;
+    }
+
+    public Veggies[] getVeggies() {
+        return veggies;
+    }
+
+    public void setVeggies(Veggies[] veggies) {
+        this.veggies = veggies;
+    }
+
+    public Cheese getCheese() {
+        return cheese;
+    }
+
+    public void setCheese(Cheese cheese) {
+        this.cheese = cheese;
+    }
+
+    public Pepperoni getPepperoni() {
+        return pepperoni;
+    }
+
+    public void setPepperoni(Pepperoni pepperoni) {
+        this.pepperoni = pepperoni;
+    }
+
+    public Clams getClams() {
+        return clams;
+    }
+
+    public void setClams(Clams clams) {
+        this.clams = clams;
     }
 
     abstract void prepare();

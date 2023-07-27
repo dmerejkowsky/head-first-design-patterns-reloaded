@@ -11,7 +11,7 @@ class ShopTest {
         var shop = new NewYorkShop();
         var pizza = shop.orderPizza("cheese");
         assertThat(pizza.name()).isEqualTo("cheese");
-        assertThat(pizza.getCrust()).isEqualTo("thin");
+        assertThat(pizza.getDough()).isInstanceOf(ThinCrustDough.class);
     }
 
     @Test
@@ -19,6 +19,6 @@ class ShopTest {
         var shop = new ChicagoShop();
         var pizza = shop.orderPizza("pepperoni");
         assertThat(pizza.name()).isEqualTo("pepperoni");
-        assertThat(pizza.getCrust()).isEqualTo("thick");
+        assertThat(pizza.getDough()).isInstanceOf(ThickCrustDough.class);
     }
 }

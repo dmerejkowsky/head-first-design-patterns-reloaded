@@ -9,44 +9,60 @@ trait Base {
     fn prepare(&self);
 }
 
-struct Cheese {}
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum Cheese {
+    Mozarella,
+    Reggiano,
+}
 
-impl Base for Cheese {
+struct CheeseBase {
+    cheese: Cheese,
+}
+
+impl Base for CheeseBase {
     fn name(&self) -> BaseName {
         BaseName::Cheese
     }
 
     fn prepare(&self) {
-        println!("Adding some cheese");
+        println!("Adding {:?}", self.cheese);
     }
 }
 
-struct Pepperoni {}
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum Dough {
+    ThickCrust,
+    ThinCrust,
+}
 
-impl Base for Pepperoni {
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum Pepperoni {
+    SlicedPepperoni, // The best in the country
+}
+
+struct PepperoniBase {
+    pepperoni: Pepperoni,
+}
+
+impl Base for PepperoniBase {
     fn name(&self) -> BaseName {
         BaseName::Pepperoni
     }
 
     fn prepare(&self) {
-        println!("Adding some pepperoni");
+        println!("Adding {:?}", self.pepperoni);
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum Crust {
-    Thick,
-    Thin,
-}
-
 struct Pizza {
+    dough: Dough,
     base: Box<dyn Base>,
-    crust: Crust,
 }
 
 impl Pizza {
-    fn new(base: Box<dyn Base>, crust: Crust) -> Self {
-        Self { base, crust }
+    fn new(base: Box<dyn Base>, ingredients: &dyn Ingredients) -> Self {
+        let dough = ingredients.get_dough();
+        Self { dough, base }
     }
 
     fn base_name(&self) -> BaseName {
@@ -77,28 +93,82 @@ trait Shop {
     }
 }
 
-struct NewYorkShop;
+struct NewYorkShop {
+    ingredients: NewYorkIngredients,
+}
+
+impl NewYorkShop {
+    fn new() -> Self {
+        Self {
+            ingredients: NewYorkIngredients,
+        }
+    }
+}
 
 impl Shop for NewYorkShop {
     fn create_pizza(&self, name: BaseName) -> Pizza {
-        let base = get_base(name);
-        Pizza::new(base, Crust::Thick)
+        let base = get_base(&self.ingredients, name);
+        Pizza::new(base, &self.ingredients)
     }
 }
 
-struct ChicagoShop;
+struct ChicagoShop {
+    ingredients: ChicagoIngredients,
+}
+
+impl ChicagoShop {
+    fn new() -> Self {
+        Self {
+            ingredients: ChicagoIngredients,
+        }
+    }
+}
 
 impl Shop for ChicagoShop {
     fn create_pizza(&self, name: BaseName) -> Pizza {
-        let base = get_base(name);
-        Pizza::new(base, Crust::Thin)
+        let base = get_base(&self.ingredients, name);
+        Pizza::new(base, &self.ingredients)
     }
 }
 
-fn get_base(name: BaseName) -> Box<dyn Base> {
+trait Ingredients {
+    fn get_dough(&self) -> Dough;
+    fn get_cheese(&self) -> Cheese;
+    fn get_pepperoni(&self) -> Pepperoni {
+        Pepperoni::SlicedPepperoni
+    }
+}
+
+struct ChicagoIngredients;
+
+impl Ingredients for ChicagoIngredients {
+    fn get_dough(&self) -> Dough {
+        Dough::ThickCrust
+    }
+
+    fn get_cheese(&self) -> Cheese {
+        Cheese::Mozarella
+    }
+}
+
+struct NewYorkIngredients;
+
+impl Ingredients for NewYorkIngredients {
+    fn get_dough(&self) -> Dough {
+        Dough::ThinCrust
+    }
+
+    fn get_cheese(&self) -> Cheese {
+        Cheese::Reggiano
+    }
+}
+
+fn get_base(ingredients: &dyn Ingredients, name: BaseName) -> Box<dyn Base> {
+    let cheese = ingredients.get_cheese();
+    let pepperoni = ingredients.get_pepperoni();
     let base: Box<dyn Base> = match name {
-        BaseName::Cheese => Box::new(Cheese {}),
-        BaseName::Pepperoni => Box::new(Pepperoni {}),
+        BaseName::Cheese => Box::new(CheeseBase { cheese }),
+        BaseName::Pepperoni => Box::new(PepperoniBase { pepperoni }),
     };
     base.prepare();
     base
@@ -111,17 +181,17 @@ mod tests {
 
     #[test]
     fn test_cheese_pizza_in_new_york() {
-        let shop = NewYorkShop;
+        let shop = NewYorkShop::new();
         let pizza = shop.order_pizza(BaseName::Cheese);
         assert_eq!(pizza.base_name(), BaseName::Cheese);
-        assert_eq!(pizza.crust, Crust::Thick);
+        assert_eq!(pizza.dough, Dough::ThinCrust);
     }
 
     #[test]
     fn test_pepperoni_pizza_in_chicago() {
-        let shop = ChicagoShop;
+        let shop = ChicagoShop::new();
         let pizza = shop.order_pizza(BaseName::Pepperoni);
         assert_eq!(pizza.base_name(), BaseName::Pepperoni);
-        assert_eq!(pizza.crust, Crust::Thin);
+        assert_eq!(pizza.dough, Dough::ThickCrust);
     }
 }

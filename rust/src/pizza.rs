@@ -82,52 +82,22 @@ impl Pizza {
     }
 }
 
-trait Shop {
-    fn create_pizza(&self, name: BaseName) -> Pizza;
+struct Shop<I: Ingredients> {
+    ingredients: I,
+}
+
+impl<I: Ingredients> Shop<I> {
+    fn create_pizza(&self, name: BaseName) -> Pizza {
+        let base = get_base(&self.ingredients, name);
+        Pizza::new(base, &self.ingredients)
+    }
+
     fn order_pizza(&self, name: BaseName) -> Pizza {
         let mut pizza = self.create_pizza(name);
         pizza.bake();
         pizza.cut();
         pizza.r#box();
         pizza
-    }
-}
-
-struct NewYorkShop {
-    ingredients: NewYorkIngredients,
-}
-
-impl NewYorkShop {
-    fn new() -> Self {
-        Self {
-            ingredients: NewYorkIngredients,
-        }
-    }
-}
-
-impl Shop for NewYorkShop {
-    fn create_pizza(&self, name: BaseName) -> Pizza {
-        let base = get_base(&self.ingredients, name);
-        Pizza::new(base, &self.ingredients)
-    }
-}
-
-struct ChicagoShop {
-    ingredients: ChicagoIngredients,
-}
-
-impl ChicagoShop {
-    fn new() -> Self {
-        Self {
-            ingredients: ChicagoIngredients,
-        }
-    }
-}
-
-impl Shop for ChicagoShop {
-    fn create_pizza(&self, name: BaseName) -> Pizza {
-        let base = get_base(&self.ingredients, name);
-        Pizza::new(base, &self.ingredients)
     }
 }
 
@@ -172,6 +142,25 @@ fn get_base(ingredients: &dyn Ingredients, name: BaseName) -> Box<dyn Base> {
     };
     base.prepare();
     base
+}
+
+type NewYorkShop = Shop<NewYorkIngredients>;
+type ChicagoShop = Shop<ChicagoIngredients>;
+
+impl NewYorkShop {
+    fn new() -> Self {
+        Self {
+            ingredients: NewYorkIngredients,
+        }
+    }
+}
+
+impl ChicagoShop {
+    fn new() -> Self {
+        Self {
+            ingredients: ChicagoIngredients,
+        }
+    }
 }
 
 #[cfg(test)]

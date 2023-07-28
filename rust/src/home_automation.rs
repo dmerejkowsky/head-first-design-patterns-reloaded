@@ -32,25 +32,22 @@ enum CeilingSpeed {
 
 struct CeilingFan {
     speed: CeilingSpeed,
-    last_speed: CeilingSpeed,
 }
 
 impl CeilingFan {
     fn new() -> Self {
         Self {
             speed: CeilingSpeed::Off,
-            last_speed: CeilingSpeed::Off,
         }
     }
 
     fn set_speed(&mut self, speed: CeilingSpeed) {
-        self.last_speed = self.speed;
         self.speed = speed;
         println!("CeilingFan at {speed:?}");
     }
 
-    fn last_speed(&self) -> CeilingSpeed {
-        self.last_speed
+    fn speed(&self) -> CeilingSpeed {
+        self.speed
     }
 }
 
@@ -81,8 +78,8 @@ impl Home {
 }
 
 trait Command {
-    fn execute(&self, home: &mut Home);
-    fn undo(&self, home: &mut Home);
+    fn execute(&mut self, home: &mut Home);
+    fn undo(&mut self, home: &mut Home);
     fn mutate_me(&mut self) {
         println!("Please help, I'm being mutated");
     }
@@ -92,20 +89,20 @@ trait Command {
 struct NoOp;
 
 impl Command for NoOp {
-    fn execute(&self, _home: &mut Home) {}
+    fn execute(&mut self, _home: &mut Home) {}
 
-    fn undo(&self, _home: &mut Home) {}
+    fn undo(&mut self, _home: &mut Home) {}
 }
 
 #[derive(Clone, Copy)]
 struct BathroomLightOn;
 
 impl Command for BathroomLightOn {
-    fn execute(&self, home: &mut Home) {
+    fn execute(&mut self, home: &mut Home) {
         home.bathroom_light.on();
     }
 
-    fn undo(&self, home: &mut Home) {
+    fn undo(&mut self, home: &mut Home) {
         home.bathroom_light.off();
     }
 }
@@ -114,11 +111,11 @@ impl Command for BathroomLightOn {
 struct BathroomLightOff;
 
 impl Command for BathroomLightOff {
-    fn execute(&self, home: &mut Home) {
+    fn execute(&mut self, home: &mut Home) {
         home.bathroom_light.off();
     }
 
-    fn undo(&self, home: &mut Home) {
+    fn undo(&mut self, home: &mut Home) {
         home.bathroom_light.on();
     }
 }
@@ -127,11 +124,11 @@ impl Command for BathroomLightOff {
 struct KitchenLightOn;
 
 impl Command for KitchenLightOn {
-    fn execute(&self, home: &mut Home) {
+    fn execute(&mut self, home: &mut Home) {
         home.kitchen_light.on();
     }
 
-    fn undo(&self, home: &mut Home) {
+    fn undo(&mut self, home: &mut Home) {
         home.kitchen_light.off();
     }
 }
@@ -140,11 +137,11 @@ impl Command for KitchenLightOn {
 struct KitchenLightOff;
 
 impl Command for KitchenLightOff {
-    fn execute(&self, home: &mut Home) {
+    fn execute(&mut self, home: &mut Home) {
         home.kitchen_light.off();
     }
 
-    fn undo(&self, home: &mut Home) {
+    fn undo(&mut self, home: &mut Home) {
         home.kitchen_light.on();
     }
 }
@@ -153,11 +150,11 @@ impl Command for KitchenLightOff {
 struct LivingroomLightOn;
 
 impl Command for LivingroomLightOn {
-    fn execute(&self, home: &mut Home) {
+    fn execute(&mut self, home: &mut Home) {
         home.livingroom_light.on();
     }
 
-    fn undo(&self, home: &mut Home) {
+    fn undo(&mut self, home: &mut Home) {
         home.livingroom_light.off();
     }
 }
@@ -166,11 +163,11 @@ impl Command for LivingroomLightOn {
 struct LivingroomLightOff;
 
 impl Command for LivingroomLightOff {
-    fn execute(&self, home: &mut Home) {
+    fn execute(&mut self, home: &mut Home) {
         home.livingroom_light.off();
     }
 
-    fn undo(&self, home: &mut Home) {
+    fn undo(&mut self, home: &mut Home) {
         home.livingroom_light.on();
     }
 }
@@ -178,68 +175,72 @@ impl Command for LivingroomLightOff {
 #[derive(Clone, Copy)]
 struct CeilingCommand {
     speed: CeilingSpeed,
+    last_speed: CeilingSpeed,
 }
 
 impl CeilingCommand {
     fn new(speed: CeilingSpeed) -> Self {
-        Self { speed }
+        Self {
+            speed,
+            last_speed: CeilingSpeed::Off,
+        }
     }
 }
 
 impl Command for CeilingCommand {
-    fn execute(&self, home: &mut Home) {
-        home.ceiling_fan.set_speed(self.speed);
+    fn execute(&mut self, home: &mut Home) {
+        let fan = &mut home.ceiling_fan;
+        self.last_speed = fan.speed();
+        fan.set_speed(self.speed);
     }
 
-    fn undo(&self, home: &mut Home) {
-        let fan = &mut home.ceiling_fan;
-        let last_speed = fan.last_speed();
-        fan.set_speed(last_speed);
+    fn undo(&mut self, home: &mut Home) {
+        home.ceiling_fan.set_speed(self.last_speed);
     }
 }
 
 struct Stereo {
     volume: usize,
-    previous_volume: usize,
 }
 
 impl Stereo {
     fn new() -> Self {
-        Self {
-            volume: 0,
-            previous_volume: 0,
-        }
+        Self { volume: 0 }
     }
 
     fn set_volume(&mut self, volume: usize) {
-        self.previous_volume = self.volume;
         println!("Stereo at {volume}");
         self.volume = volume;
     }
 
-    fn previous_volume(&self) -> usize {
-        self.previous_volume
+    fn volume(&self) -> usize {
+        self.volume
     }
 }
 
 struct StereoCommand {
     volume: usize,
+    last_volume: usize,
 }
 
 impl StereoCommand {
     fn new(volume: usize) -> Self {
-        Self { volume }
+        Self {
+            volume,
+            last_volume: 0,
+        }
     }
 }
 
 impl Command for StereoCommand {
-    fn execute(&self, home: &mut Home) {
+    fn execute(&mut self, home: &mut Home) {
+        let previous_volume = home.stereo.volume();
+        self.last_volume = previous_volume;
         home.stereo.set_volume(self.volume)
     }
 
-    fn undo(&self, home: &mut Home) {
-        let previous_volume = home.stereo.previous_volume();
-        home.stereo.set_volume(previous_volume)
+    fn undo(&mut self, home: &mut Home) {
+        home.stereo.set_volume(self.last_volume)
     }
 }
 
@@ -254,14 +255,14 @@ impl MacroCommand {
 }
 
 impl Command for MacroCommand {
-    fn execute(&self, home: &mut Home) {
-        for command in &self.commands {
+    fn execute(&mut self, home: &mut Home) {
+        for command in &mut self.commands {
             command.execute(home);
         }
     }
 
-    fn undo(&self, home: &mut Home) {
-        for command in self.commands.iter().rev() {
+    fn undo(&mut self, home: &mut Home) {
+        for command in self.commands.iter_mut().rev() {
             command.undo(home);
         }
     }
@@ -334,12 +335,12 @@ impl Remote {
             }
         };
         let command = button.command_mut();
-        command.mutate_me();
+        command.execute(home);
         self.last_button_index = button_index;
     }
 
-    fn undo(&self, home: &mut Home) {
-        let last_command = self.buttons[self.last_button_index].command();
+    fn undo(&mut self, home: &mut Home) {
+        let last_command = self.buttons[self.last_button_index].command_mut();
         last_command.undo(home);
     }
 }

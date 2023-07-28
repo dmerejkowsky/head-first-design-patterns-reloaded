@@ -1,3 +1,6 @@
+#![warn(dead_code)]
+
+use std::collections::HashMap;
 struct Light {
     location: &'static str,
     on: bool,
@@ -19,6 +22,13 @@ impl Light {
     fn off(&mut self) {
         println!("Turning {} light off", self.location);
         self.on = false
+    }
+
+    fn status(&self) -> LightStatus {
+        match self.on {
+            true => LightStatus::On,
+            false => LightStatus::Off,
+        }
     }
 }
 
@@ -52,27 +62,21 @@ impl CeilingFan {
 }
 
 struct Home {
-    kitchen_light: Light,
-    bathroom_light: Light,
-    livingroom_light: Light,
+    lights: HashMap<&'static str, Light>,
     ceiling_fan: CeilingFan,
     stereo: Stereo,
 }
 
 impl Home {
     fn new() -> Self {
-        let kitchen_light = Light::new("kitchen");
-        let bathroom_light = Light::new("bathroom");
-        let livingroom_light = Light::new("livingroom");
-        let ceiling_fan = CeilingFan::new();
-        let stereo = Stereo::new();
-
+        let mut lights = HashMap::new();
+        lights.insert("kitchen", Light::new("kitchen"));
+        lights.insert("bathroom", Light::new("bathroom"));
+        lights.insert("livingroom", Light::new("livingroom"));
         Self {
-            kitchen_light,
-            bathroom_light,
-            livingroom_light,
-            ceiling_fan,
-            stereo,
+            lights,
+            stereo: Stereo::new(),
+            ceiling_fan: CeilingFan::new(),
         }
     }
 }
@@ -85,7 +89,6 @@ trait Command {
     }
 }
 
-#[derive(Clone, Copy)]
 struct NoOp;
 
 impl Command for NoOp {
@@ -94,85 +97,58 @@ impl Command for NoOp {
     fn undo(&mut self, _home: &mut Home) {}
 }
 
-#[derive(Clone, Copy)]
-struct BathroomLightOn;
+enum LightStatus {
+    On,
+    Off,
+}
 
-impl Command for BathroomLightOn {
-    fn execute(&mut self, home: &mut Home) {
-        home.bathroom_light.on();
-    }
+struct LightCommand {
+    location: &'static str,
+    value: LightStatus,
+    last_value: LightStatus,
+}
 
-    fn undo(&mut self, home: &mut Home) {
-        home.bathroom_light.off();
+impl LightCommand {
+    fn new(location: &'static str, value: LightStatus) -> Self {
+        Self {
+            location,
+            value,
+            last_value: LightStatus::Off,
+        }
     }
 }
 
-#[derive(Clone, Copy)]
-struct BathroomLightOff;
-
-impl Command for BathroomLightOff {
+impl Command for LightCommand {
     fn execute(&mut self, home: &mut Home) {
-        home.bathroom_light.off();
+        let light = match home.lights.get_mut(self.location) {
+            None => {
+                eprint!("Light not found");
+                return;
+            }
+            Some(l) => l,
+        };
+        self.last_value = light.status();
+        match self.value {
+            LightStatus::On => light.on(),
+            LightStatus::Off => light.off(),
+        }
     }
 
     fn undo(&mut self, home: &mut Home) {
-        home.bathroom_light.on();
+        let light = match home.lights.get_mut(self.location) {
+            None => {
+                eprint!("Light not found");
+                return;
+            }
+            Some(l) => l,
+        };
+        match self.last_value {
+            LightStatus::On => light.on(),
+            LightStatus::Off => light.off(),
+        };
     }
 }
 
-#[derive(Clone, Copy)]
-struct KitchenLightOn;
-
-impl Command for KitchenLightOn {
-    fn execute(&mut self, home: &mut Home) {
-        home.kitchen_light.on();
-    }
-
-    fn undo(&mut self, home: &mut Home) {
-        home.kitchen_light.off();
-    }
-}
-
-#[derive(Clone, Copy)]
-struct KitchenLightOff;
-
-impl Command for KitchenLightOff {
-    fn execute(&mut self, home: &mut Home) {
-        home.kitchen_light.off();
-    }
-
-    fn undo(&mut self, home: &mut Home) {
-        home.kitchen_light.on();
-    }
-}
-
-#[derive(Clone, Copy)]
-struct LivingroomLightOn;
-
-impl Command for LivingroomLightOn {
-    fn execute(&mut self, home: &mut Home) {
-        home.livingroom_light.on();
-    }
-
-    fn undo(&mut self, home: &mut Home) {
-        home.livingroom_light.off();
-    }
-}
-
-#[derive(Clone, Copy)]
-struct LivingroomLightOff;
-
-impl Command for LivingroomLightOff {
-    fn execute(&mut self, home: &mut Home) {
-        home.livingroom_light.off();
-    }
-
-    fn undo(&mut self, home: &mut Home) {
-        home.livingroom_light.on();
-    }
-}
-
-#[derive(Clone, Copy)]
 struct CeilingCommand {
     speed: CeilingSpeed,
     last_speed: CeilingSpeed,
@@ -277,11 +253,7 @@ impl Button {
         Self { command }
     }
 
-    fn command(&self) -> &dyn Command {
-        self.command.as_ref()
-    }
-
-    fn command_mut(&mut self) -> &mut dyn Command {
+    fn command(&mut self) -> &mut dyn Command {
         self.command.as_mut()
     }
 }
@@ -294,18 +266,18 @@ struct Remote {
 impl Remote {
     fn new() -> Self {
         let party_command: Vec<Box<dyn Command>> = vec![
-            Box::new(LivingroomLightOn),
+            Box::new(LightCommand::new("livingroom", LightStatus::On)),
             Box::new(CeilingCommand::new(CeilingSpeed::Off)),
             Box::new(StereoCommand::new(11)),
         ];
 
         let buttons = vec![
-            Button::new(Box::new(BathroomLightOn)),
-            Button::new(Box::new(BathroomLightOff)),
-            Button::new(Box::new(LivingroomLightOn)),
-            Button::new(Box::new(LivingroomLightOff)),
-            Button::new(Box::new(KitchenLightOn)),
-            Button::new(Box::new(KitchenLightOff)),
+            Button::new(Box::new(LightCommand::new("bathroom", LightStatus::On))),
+            Button::new(Box::new(LightCommand::new("bathroom", LightStatus::Off))),
+            Button::new(Box::new(LightCommand::new("livingroom", LightStatus::On))),
+            Button::new(Box::new(LightCommand::new("livingroom", LightStatus::Off))),
+            Button::new(Box::new(LightCommand::new("kitchen", LightStatus::On))),
+            Button::new(Box::new(LightCommand::new("kitchen", LightStatus::Off))),
             Button::new(Box::new(CeilingCommand::new(CeilingSpeed::Off))),
             Button::new(Box::new(CeilingCommand::new(CeilingSpeed::Low))),
             Button::new(Box::new(CeilingCommand::new(CeilingSpeed::Medium))),
@@ -334,13 +306,13 @@ impl Remote {
                 return;
             }
         };
-        let command = button.command_mut();
+        let command = button.command();
         command.execute(home);
         self.last_button_index = button_index;
     }
 
     fn undo(&mut self, home: &mut Home) {
-        let last_command = self.buttons[self.last_button_index].command_mut();
+        let last_command = self.buttons[self.last_button_index].command();
         last_command.undo(home);
     }
 }

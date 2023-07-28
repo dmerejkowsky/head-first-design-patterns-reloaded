@@ -1,0 +1,5 @@
+Guildelines that violate the Dependency Inversion Principle
+
+* No variabble should hold a reference to a concrete class
+* No clas should devire from a concrete class (<- Rust)
+* No method should override an implemented method of any of its base classes

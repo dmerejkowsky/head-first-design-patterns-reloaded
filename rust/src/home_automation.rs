@@ -82,7 +82,10 @@ impl Home {
 
 trait Command {
     fn execute(&self, home: &mut Home);
-    fn undo(&self, _home: &mut Home);
+    fn undo(&self, home: &mut Home);
+    fn mutate_me(&mut self) {
+        println!("Please help, I'm being mutated");
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -276,6 +279,10 @@ impl Button {
     fn command(&self) -> &dyn Command {
         self.command.as_ref()
     }
+
+    fn command_mut(&mut self) -> &mut dyn Command {
+        self.command.as_mut()
+    }
 }
 
 struct Remote {
@@ -318,15 +325,16 @@ impl Remote {
     }
 
     fn press(&mut self, button_index: usize, home: &mut Home) {
-        let button = match self.buttons.get(button_index) {
+        let button = self.buttons.get_mut(button_index);
+        let button = match button {
             Some(b) => b,
             None => {
                 println!("No such button");
                 return;
             }
         };
-        let command = button.command();
-        command.execute(home);
+        let command = button.command_mut();
+        command.mutate_me();
         self.last_button_index = button_index;
     }
 

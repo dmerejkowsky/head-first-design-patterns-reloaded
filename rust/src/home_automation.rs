@@ -57,19 +57,25 @@ impl CeilingFan {
 struct Home {
     kitchen_light: Light,
     bathroom_light: Light,
+    livingroom_light: Light,
     ceiling_fan: CeilingFan,
+    stereo: Stereo,
 }
 
 impl Home {
     fn new() -> Self {
         let kitchen_light = Light::new("kitchen");
         let bathroom_light = Light::new("bathroom");
+        let livingroom_light = Light::new("livingroom");
         let ceiling_fan = CeilingFan::new();
+        let stereo = Stereo::new();
 
         Self {
             kitchen_light,
             bathroom_light,
+            livingroom_light,
             ceiling_fan,
+            stereo,
         }
     }
 }
@@ -115,6 +121,58 @@ impl Command for BathroomLightOff {
 }
 
 #[derive(Clone, Copy)]
+struct KitchenLightOn;
+
+impl Command for KitchenLightOn {
+    fn execute(&self, home: &mut Home) {
+        home.kitchen_light.on();
+    }
+
+    fn undo(&self, home: &mut Home) {
+        home.kitchen_light.off();
+    }
+}
+
+#[derive(Clone, Copy)]
+struct KitchenLightOff;
+
+impl Command for KitchenLightOff {
+    fn execute(&self, home: &mut Home) {
+        home.kitchen_light.off();
+    }
+
+    fn undo(&self, home: &mut Home) {
+        home.kitchen_light.on();
+    }
+}
+
+#[derive(Clone, Copy)]
+struct LivingroomLightOn;
+
+impl Command for LivingroomLightOn {
+    fn execute(&self, home: &mut Home) {
+        home.livingroom_light.on();
+    }
+
+    fn undo(&self, home: &mut Home) {
+        home.livingroom_light.off();
+    }
+}
+
+#[derive(Clone, Copy)]
+struct LivingroomLightOff;
+
+impl Command for LivingroomLightOff {
+    fn execute(&self, home: &mut Home) {
+        home.livingroom_light.off();
+    }
+
+    fn undo(&self, home: &mut Home) {
+        home.livingroom_light.on();
+    }
+}
+
+#[derive(Clone, Copy)]
 struct CeilingCommand {
     speed: CeilingSpeed,
 }
@@ -134,6 +192,75 @@ impl Command for CeilingCommand {
         let fan = &mut home.ceiling_fan;
         let last_speed = fan.last_speed();
         fan.set_speed(last_speed);
+    }
+}
+
+struct Stereo {
+    volume: usize,
+    previous_volume: usize,
+}
+
+impl Stereo {
+    fn new() -> Self {
+        Self {
+            volume: 0,
+            previous_volume: 0,
+        }
+    }
+
+    fn set_volume(&mut self, volume: usize) {
+        self.previous_volume = self.volume;
+        println!("Stereo at {volume}");
+        self.volume = volume;
+    }
+
+    fn previous_volume(&self) -> usize {
+        self.previous_volume
+    }
+}
+
+struct StereoCommand {
+    volume: usize,
+}
+
+impl StereoCommand {
+    fn new(volume: usize) -> Self {
+        Self { volume }
+    }
+}
+
+impl Command for StereoCommand {
+    fn execute(&self, home: &mut Home) {
+        home.stereo.set_volume(self.volume)
+    }
+
+    fn undo(&self, home: &mut Home) {
+        let previous_volume = home.stereo.previous_volume();
+        home.stereo.set_volume(previous_volume)
+    }
+}
+
+struct MacroCommand {
+    commands: Vec<Box<dyn Command>>,
+}
+
+impl MacroCommand {
+    fn new(commands: Vec<Box<dyn Command>>) -> Self {
+        Self { commands }
+    }
+}
+
+impl Command for MacroCommand {
+    fn execute(&self, home: &mut Home) {
+        for command in &self.commands {
+            command.execute(home);
+        }
+    }
+
+    fn undo(&self, home: &mut Home) {
+        for command in self.commands.iter().rev() {
+            command.undo(home);
+        }
     }
 }
 
@@ -158,13 +285,30 @@ struct Remote {
 
 impl Remote {
     fn new() -> Self {
+        let party_command: Vec<Box<dyn Command>> = vec![
+            Box::new(LivingroomLightOn),
+            Box::new(CeilingCommand::new(CeilingSpeed::Off)),
+            Box::new(StereoCommand::new(11)),
+        ];
+
         let buttons = vec![
             Button::new(Box::new(BathroomLightOn)),
             Button::new(Box::new(BathroomLightOff)),
+            Button::new(Box::new(LivingroomLightOn)),
+            Button::new(Box::new(LivingroomLightOff)),
+            Button::new(Box::new(KitchenLightOn)),
+            Button::new(Box::new(KitchenLightOff)),
             Button::new(Box::new(CeilingCommand::new(CeilingSpeed::Off))),
             Button::new(Box::new(CeilingCommand::new(CeilingSpeed::Low))),
             Button::new(Box::new(CeilingCommand::new(CeilingSpeed::Medium))),
             Button::new(Box::new(CeilingCommand::new(CeilingSpeed::High))),
+            Button::new(Box::new(StereoCommand::new(0))),
+            Button::new(Box::new(StereoCommand::new(2))),
+            Button::new(Box::new(StereoCommand::new(4))),
+            Button::new(Box::new(StereoCommand::new(6))),
+            Button::new(Box::new(StereoCommand::new(8))),
+            Button::new(Box::new(StereoCommand::new(11))),
+            Button::new(Box::new(MacroCommand::new(party_command))),
         ];
 
         Self {

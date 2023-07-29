@@ -1,6 +1,6 @@
 package info.dmerej.barrista;
 
-public class Tea {
+public class Tea extends HotBeverage {
     public void prepareRecipe() {
         boilWater();
         steepTeaBag();
@@ -8,19 +8,10 @@ public class Tea {
         addLemon();
     }
 
-
-    private void boilWater() {
-        System.out.println("Boiling water");
-    }
-
     private void steepTeaBag() {
         System.out.println("Steeping the tea");
     }
-
-    private void pourInCup() {
-        System.out.println("Pouring in cup");
-    }
-
+    
     private void addLemon() {
         System.out.println("Adding sugar lemon");
     }

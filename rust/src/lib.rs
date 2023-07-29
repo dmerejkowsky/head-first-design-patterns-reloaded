@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+pub mod barrista;
 mod coffee;
 pub mod home_automation;
 mod pizza;

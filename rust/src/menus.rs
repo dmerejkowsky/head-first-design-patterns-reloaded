@@ -1,19 +1,19 @@
 use std::rc::Rc;
 
 #[derive(Debug)]
-struct MenuItem {
+struct Item {
     name: &'static str,
     price: u32,
 }
 
-impl MenuItem {
+impl Item {
     fn new(name: &'static str, price: u32) -> Self {
         Self { name, price }
     }
 }
 
 enum Component {
-    Item(MenuItem),
+    Item(Item),
     Menu(Menu),
 }
 
@@ -23,6 +23,15 @@ impl Component {
             Component::Menu(m) => m.print(),
             Component::Item(i) => println!("{} {}", i.name, i.price),
         }
+    }
+
+    fn new_item(name: &'static str, price: u32) -> Self {
+        Self::Item(Item::new(name, price))
+    }
+
+    fn new_menu(name: &'static str, components: &[&Rc<Component>]) -> Self {
+        let components: Vec<_> = components.iter().map(|x| Rc::clone(x)).collect();
+        Self::Menu(Menu::new(name, components))
     }
 }
 
@@ -45,21 +54,15 @@ impl Menu {
 }
 
 pub fn run() {
-    let pasta = Rc::new(Component::Item(MenuItem::new("pasta", 4)));
-    let waffles = Rc::new(Component::Item(MenuItem::new("waffles", 2)));
-    let apple_pie = Rc::new(Component::Item(MenuItem::new("Apple pie", 3)));
-    let diner = Component::Menu(Menu::new(
+    let pasta = Rc::new(Component::new_item("pasta", 4));
+    let waffles = Rc::new(Component::new_item("waffles", 2));
+    let apple_pie = Rc::new(Component::new_item("Apple pie", 3));
+    let diner = Rc::new(Component::new_menu(
         "Diner",
-        vec![
-            Rc::clone(&pasta),
-            Rc::clone(&waffles),
-            Rc::clone(&apple_pie),
-        ],
+        &[&pasta, &waffles, &apple_pie],
     ));
+    let breakfast = Rc::new(Component::new_menu("Breakfast", &[&waffles]));
 
-    let breakfast = Component::Menu(Menu::new("Breakfast", vec![Rc::clone(&waffles)]));
-
-    let all_menus = Menu::new("All menus", vec![Rc::new(diner), Rc::new(breakfast)]);
-
+    let all_menus = Component::new_menu("All menus", &[&diner, &breakfast]);
     all_menus.print();
 }

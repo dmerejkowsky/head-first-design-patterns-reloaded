@@ -1,23 +1,14 @@
 package info.dmerej.menus;
 
-import java.util.List;
-
 public class Waitress {
-    private final List<Menu> menus;
+    private final MenuComponent allMenus;
 
-    public Waitress(List<Menu> menus) {
-        this.menus = menus;
+    public Waitress(MenuComponent allMenus) {
+        this.allMenus = allMenus;
     }
 
     public void printMenus() {
-        for (var menu : menus) {
-            printMenu(menu);
-        }
+        allMenus.print();
     }
 
-    private void printMenu(Menu menu) {
-        menu.getItems().forEach(item -> {
-            System.out.println(item);
-        });
-    }
 }

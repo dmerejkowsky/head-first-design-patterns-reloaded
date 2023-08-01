@@ -1,5 +1,11 @@
 use std::collections::HashMap;
 
+trait MenuComponent {
+    fn name(&self) -> &str;
+    fn add(&mut self, component: Box<dyn MenuComponent>);
+    fn print(&self);
+}
+
 #[derive(Debug)]
 struct MenuItem {
     name: String,
@@ -12,83 +18,61 @@ impl MenuItem {
     }
 }
 
-trait Menu {
-    fn items<'s>(&'s self) -> Box<dyn Iterator<Item = &MenuItem> + 's>;
-}
+impl MenuComponent for MenuItem {
+    fn name(&self) -> &str {
+        &self.name
+    }
 
-struct CoffeeMenu {
-    items: HashMap<String, MenuItem>,
-}
+    fn add(&mut self, _component: Box<dyn MenuComponent>) {
+        panic!("Unsupported operation")
+    }
 
-impl CoffeeMenu {
-    fn new(items: HashMap<String, MenuItem>) -> Self {
-        Self { items }
+    fn print(&self) {
+        println!("{self:?}");
     }
 }
 
-impl Menu for CoffeeMenu {
-    fn items<'s>(&'s self) -> Box<dyn Iterator<Item = &MenuItem> + 's> {
-        Box::new(self.items.values().into_iter())
+struct Menu {
+    name: String,
+    components: Vec<Box<dyn MenuComponent>>,
+}
+
+impl Menu {
+    fn new(name: String, components: Vec<Box<dyn MenuComponent>>) -> Self {
+        Self { name, components }
     }
 }
 
-struct DinerMenu {
-    items: Vec<MenuItem>,
-}
-
-impl DinerMenu {
-    fn new(items: Vec<MenuItem>) -> Self {
-        Self { items }
+impl MenuComponent for Menu {
+    fn name(&self) -> &str {
+        &self.name
     }
-}
 
-impl Menu for DinerMenu {
-    fn items<'s>(&'s self) -> Box<dyn Iterator<Item = &MenuItem> + 's> {
-        Box::new(self.items.iter())
+    fn add(&mut self, component: Box<dyn MenuComponent>) {
+        self.components.push(component);
     }
-}
-struct PancakesMenu {
-    items: [MenuItem; 3],
-}
 
-impl PancakesMenu {
-    fn new(items: [MenuItem; 3]) -> Self {
-        Self { items }
-    }
-}
-
-impl Menu for PancakesMenu {
-    fn items<'s>(&'s self) -> Box<dyn Iterator<Item = &MenuItem> + 's> {
-        Box::new(self.items.iter())
-    }
-}
-
-fn print_menus(menus: Vec<Box<dyn Menu>>) {
-    for menu in menus.iter() {
-        for item in menu.items() {
-            println!("{item:?}");
+    fn print(&self) {
+        println!("{}", self.name);
+        for component in &self.components {
+            component.print()
         }
     }
 }
 
 pub fn run() {
-    let diner = DinerMenu::new(vec![
-        MenuItem::new("A".to_owned(), 2),
-        MenuItem::new("B".to_owned(), 3),
-    ]);
-
-    let mut coffees = HashMap::new();
-    coffees.insert("tall".to_owned(), MenuItem::new("tall".to_owned(), 2));
-    coffees.insert("small".to_owned(), MenuItem::new("tall".to_owned(), 1));
-    let coffee = CoffeeMenu::new(coffees);
-
-    let pancakes_menu = PancakesMenu::new([
-        MenuItem::new("x".to_string(), 10),
-        MenuItem::new("y".to_string(), 11),
-        MenuItem::new("z".to_string(), 12),
-    ]);
-
-    let menus: Vec<Box<dyn Menu>> =
-        vec![Box::new(diner), Box::new(coffee), Box::new(pancakes_menu)];
-    print_menus(menus);
+    let pasta = MenuItem::new("Pasta".to_owned(), 4);
+    let apple_pie = MenuItem::new("Apple pie".to_owned(), 3);
+    let waffles = MenuItem::new("Waffles".to_owned(), 2);
+    let desert_menu = Menu::new(
+        "Deserts".to_owned(),
+        vec![Box::new(apple_pie), Box::new(waffles)],
+    );
+    let diner_menu = Menu::new(
+        "Diner".to_owned(),
+        vec![Box::new(pasta), Box::new(desert_menu)],
+    );
+    diner_menu.print();
+    // Does not compile :(
+    // let breakfast = Menu::new("Breakfast".to_owned(), vec![Box::new(waffles)]);
 }

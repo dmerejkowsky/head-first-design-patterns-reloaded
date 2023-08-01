@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use std::rc::Rc;
 
 trait MenuComponent {
     fn name(&self) -> &str;
-    fn add(&mut self, component: Box<dyn MenuComponent>);
+    fn add(&mut self, component: Rc<Box<dyn MenuComponent>>);
     fn print(&self);
 }
 
@@ -23,7 +23,7 @@ impl MenuComponent for MenuItem {
         &self.name
     }
 
-    fn add(&mut self, _component: Box<dyn MenuComponent>) {
+    fn add(&mut self, _component: Rc<Box<dyn MenuComponent>>) {
         panic!("Unsupported operation")
     }
 
@@ -34,11 +34,11 @@ impl MenuComponent for MenuItem {
 
 struct Menu {
     name: String,
-    components: Vec<Box<dyn MenuComponent>>,
+    components: Vec<Rc<Box<dyn MenuComponent>>>,
 }
 
 impl Menu {
-    fn new(name: String, components: Vec<Box<dyn MenuComponent>>) -> Self {
+    fn new(name: String, components: Vec<Rc<Box<dyn MenuComponent>>>) -> Self {
         Self { name, components }
     }
 }
@@ -48,7 +48,7 @@ impl MenuComponent for Menu {
         &self.name
     }
 
-    fn add(&mut self, component: Box<dyn MenuComponent>) {
+    fn add(&mut self, component: Rc<Box<dyn MenuComponent>>) {
         self.components.push(component);
     }
 
@@ -61,18 +61,31 @@ impl MenuComponent for Menu {
 }
 
 pub fn run() {
-    let pasta = MenuItem::new("Pasta".to_owned(), 4);
+    let pasta = MenuItem::new("pasta".to_owned(), 4);
+    let pasta: Rc<Box<dyn MenuComponent>> = Rc::new(Box::new(pasta));
+
+    let waffles = MenuItem::new("waffles".to_owned(), 4);
+    let waffles: Rc<Box<dyn MenuComponent>> = Rc::new(Box::new(waffles));
+
     let apple_pie = MenuItem::new("Apple pie".to_owned(), 3);
-    let waffles = MenuItem::new("Waffles".to_owned(), 2);
-    let desert_menu = Menu::new(
-        "Deserts".to_owned(),
-        vec![Box::new(apple_pie), Box::new(waffles)],
-    );
-    let diner_menu = Menu::new(
+    let apple_pie: Rc<Box<dyn MenuComponent>> = Rc::new(Box::new(apple_pie));
+
+    let diner = Menu::new(
         "Diner".to_owned(),
-        vec![Box::new(pasta), Box::new(desert_menu)],
+        vec![
+            Rc::clone(&pasta),
+            Rc::clone(&waffles),
+            Rc::clone(&apple_pie),
+        ],
     );
-    diner_menu.print();
-    // Does not compile :(
-    // let breakfast = Menu::new("Breakfast".to_owned(), vec![Box::new(waffles)]);
+    let diner: Rc<Box<dyn MenuComponent>> = Rc::new(Box::new(diner));
+
+    let breakfast = Menu::new("Breakfast".to_owned(), vec![Rc::clone(&waffles)]);
+    let breakfast: Rc<Box<dyn MenuComponent>> = Rc::new(Box::new(breakfast));
+
+    let all_menus = Menu::new(
+        "All menus".to_owned(),
+        vec![Rc::clone(&diner), Rc::clone(&breakfast)],
+    );
+    all_menus.print()
 }

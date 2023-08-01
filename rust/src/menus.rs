@@ -1,11 +1,11 @@
 #[derive(Debug)]
 struct MenuItem {
-    name: String,
+    name: &'static str,
     price: u32,
 }
 
 impl MenuItem {
-    fn new(name: String, price: u32) -> Self {
+    fn new(name: &'static str, price: u32) -> Self {
         Self { name, price }
     }
 }
@@ -25,12 +25,12 @@ impl Component {
 }
 
 struct Menu {
-    name: String,
+    name: &'static str,
     components: Vec<Component>,
 }
 
 impl Menu {
-    fn new(name: String, components: Vec<Component>) -> Self {
+    fn new(name: &'static str, components: Vec<Component>) -> Self {
         Self { name, components }
     }
 
@@ -43,11 +43,11 @@ impl Menu {
 }
 
 pub fn run() {
-    let pasta = Component::Item(MenuItem::new("pasta".to_owned(), 4));
-    let waffles = Component::Item(MenuItem::new("waffles".to_owned(), 2));
-    let apple_pie = Component::Item(MenuItem::new("Apple pie".to_owned(), 3));
-    let diner = Menu::new("Diner".to_owned(), vec![pasta, waffles, apple_pie]);
+    let pasta = Component::Item(MenuItem::new("pasta", 4));
+    let waffles = Component::Item(MenuItem::new("waffles", 2));
+    let apple_pie = Component::Item(MenuItem::new("Apple pie", 3));
+    let diner = Menu::new("Diner", vec![pasta, waffles, apple_pie]);
     diner.print();
 
-    let breakfast = Menu::new("Breakfast".to_owned(), vec![waffles]);
+    let breakfast = Menu::new("Breakfast", vec![waffles]);
 }

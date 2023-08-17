@@ -9,17 +9,17 @@ struct WeatherData {
 }
 
 #[derive(Default)]
-struct WeatherStation<'o> {
-    displays: Vec<&'o mut dyn Observer>,
+struct WeatherStation<'obsevers> {
+    observers: Vec<&'obsevers mut dyn Observer>,
 }
 
-impl<'o> WeatherStation<'o> {
+impl<'observers> WeatherStation<'observers> {
     fn new() -> Self {
         Default::default()
     }
 
-    fn subscribe(&mut self, display: &'o mut dyn Observer) {
-        self.displays.push(display);
+    fn subscribe(&mut self, display: &'observers mut dyn Observer) {
+        self.observers.push(display);
     }
 
     fn run(&mut self) {
@@ -38,8 +38,8 @@ impl<'o> WeatherStation<'o> {
     }
 
     fn notify(&mut self, weather_data: WeatherData) {
-        for display in &mut self.displays {
-            display.on_change(&weather_data);
+        for observer in &mut self.observers {
+            observer.on_change(&weather_data);
         }
     }
 }

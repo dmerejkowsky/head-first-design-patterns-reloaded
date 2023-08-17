@@ -40,3 +40,19 @@ def squeaking(duck):
 class RubberDuck(Duck):
     def __init__(self):
         super().__init__("rubber", no_way_flying, squeaking)
+
+
+def silent_quacking(duck):
+    return "<silence>"
+
+
+def flying_on_a_rocket(duck):
+    return "I'm flying on a rocket"
+
+
+class WoodenDuck(Duck):
+    def __init__(self):
+        super().__init__("wooden", no_way_flying, silent_quacking)
+
+    def place_on_rocket(self):
+        self._flying = flying_on_a_rocket

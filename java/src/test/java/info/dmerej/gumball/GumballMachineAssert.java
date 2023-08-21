@@ -11,7 +11,7 @@ public class GumballMachineAssert extends AbstractAssert<GumballMachineAssert, G
 
     public GumballMachineAssert isNotSoldOut() {
         isNotNull();
-        if (actual.getState() == State.SoldOut) {
+        if (!(actual.getState() instanceof SoldOutState)) {
             failWithMessage("Machine should not be sold out");
         }
         return this;
@@ -20,8 +20,10 @@ public class GumballMachineAssert extends AbstractAssert<GumballMachineAssert, G
     public GumballMachineAssert hasState(State expectedState) {
         isNotNull();
         var actualState = actual.getState();
-        if (actualState != expectedState) {
-            failWithMessage("Expected stated to be %s but was %s", expectedState, actualState);
+        var expectedClassName = expectedState.getClass().getSimpleName();
+        var actualClassName = actualState.getClass().getSimpleName();
+        if (actualClassName != expectedClassName) {
+            failWithMessage("Expected state to be %s but was %s", expectedClassName, actualClassName);
         }
         return this;
     }

@@ -1,9 +1,11 @@
 package info.dmerej.gumball;
 
-public enum State {
-    HasQuarter,
-    SoldOut,
-    Sold,
-    NoQuarter,
-}
+public interface State {
+    void insertQuarter();
 
+    void ejectQuarter();
+
+    void turnCrank();
+
+    void dispense();
+}
